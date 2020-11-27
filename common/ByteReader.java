@@ -1,3 +1,7 @@
+package common;
+
+import java.io.*;
+
 public class ByteReader {
     private InputStream in;
     private int successiveOnes = 0;
@@ -9,7 +13,7 @@ public class ByteReader {
     private byte read () throws Exception {
 	int val = in.read();
 	if (val < 0 && val > 255)
-	    throw Exception();
+	    throw new Exception();
 
 	String cur = Utils.leftPad(Integer.toBinaryString(val), 8);
 	byte res = 0;
@@ -21,7 +25,7 @@ public class ByteReader {
 		    continue;
 		} else if (cur.charAt(j+2) == '1') {
 		    System.err.println("Abort Condition...");
-		    throw Exception();
+		    throw new Exception();
 		} else {
 		    return Frame.FLAG;
 		}
@@ -31,7 +35,7 @@ public class ByteReader {
 	    else
 		successiveOnes++;
 
-	    res = res << 1 | (c == '0' ? 0 : 1);
+	    res = (byte) ((res << 1) | (c == '0' ? 0 : 1));
 	}
 
 	return res;

@@ -1,7 +1,7 @@
-package client;
+package common;
 
 import java.util.*;
-import static Frame.META_DATA_SIZE;
+import static common.Frame.META_DATA_SIZE;
 
 public class FrameBuilder {
     private static final int MAX_FRAME_SIZE = 128 * 1024; // 128 kB
@@ -14,6 +14,7 @@ public class FrameBuilder {
 	frames.add(new Frame(Frame.Type.C, (char) 0, null));
 	for (int offset = 0; offset < data.length; offset += EFFECTIVE_MAX_DATA_SIZE) {
 	    byte[] frameData = Arrays.copyOfRange(data, offset, offset + EFFECTIVE_MAX_DATA_SIZE);
+	    // using unsafe char casting but should never exceed '7'
 	    frames.add(new Frame(Frame.Type.I, (char) ('0' + frameNum), frameData));
 	    frameNum = (frameNum + 1) % MAX_NUM_FRAMES;
 	}
