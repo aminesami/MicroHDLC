@@ -1,4 +1,8 @@
+package client;
+
 import java.net.*;
+import java.nio.file.*;
+import static java.nio.file.Files.readAllBytes;
 
 public class Sender {
     private Socket socket;
@@ -17,7 +21,14 @@ public class Sender {
     
     public static void main (String[] args) {
 	Sender s;
+	byte[] data;
 	try {
+	    data = readAllBytes(Paths.get(args[2]));
+	    /*
+	    for (byte b : data) {
+		leftPad(Integer.toBinaryString(b), 8);
+	    }
+	    */
 	    s = new Sender(args[0], Integer.parseInt(args[1]));
 	} catch (Exception e) {
 
