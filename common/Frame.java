@@ -1,4 +1,5 @@
 package common;
+import java.util.*;
 import java.nio.*;
 
 public class Frame {
@@ -18,51 +19,74 @@ public class Frame {
 	for (int i = 0; i < data.length; i++) {
 	    rawData[i + 2] = data[i];
 	}
+        
 	rawData[rawData.length - 2] = 0;
 	rawData[rawData.length - 1] = 0;
+        
 	calculateChecksum(rawData);
 	this.data = bitStuff(rawData);
     }
 
     private void calculateChecksum (byte[] data) {
-	int x = BitEngine.getBits(data, 0, 17) ^ CRC_CCITT;
-	for (int i = 17; i < data.length * 8; i++) {
-	    // maybe should skip leading zeros as done in the book
-	    x = (((x << 1) | (BitEngine.getBit(data, i) ? 1 : 0)) ^ CRC_CCITT) & 0xffff;
-	}
-	data[data.length - 2] = (byte) ((x >> 16) & 0xff);
-	data[data.length - 1] = (byte) (x & 0xff);
+        int[] bytes = new int[data.length];
+        for (int i = 0; i < data.length; i++)
+            bytes[i] = data[i];
+        int crc = 0;
+
+        for (int b : bytes) {
+            for (int i = 0; i < 8; i++) {
+                int bit = (b >> (7 - i)) & 1;
+                int top = (crc >> 15) & 1;
+                crc <<= 1;
+                if ((bit ^ top) == 1)
+                    crc ^= CRC_CCITT;
+            }
+        }
+
+        data[data.length - 2] = (byte) ((crc & 0xff00) >> 8);
+        data[data.length - 1] = (byte) (crc & 0xff);
+    }
+    
+    private byte[] bitStuff (byte[] data) {
+        int successiveOnes = 0;
+        int nBits = 0;
+        int currentByte = 0;
+
+        ArrayList<Byte> bytes = new ArrayList<Byte>();
+        
+        for (byte b : data) {
+            for (int i = 0; i < 8; i++) {
+                int bit = (b >> (7 - i)) & 1;
+                if (bit == 1)
+                    successiveOnes++;
+                else
+                    successiveOnes = 0;
+                currentByte = (currentByte << 1) | bit;
+                nBits++;
+                if (nBits == 8) {
+                    bytes.add((byte) currentByte);
+                    nBits = currentByte = 0;
+                }
+
+                if (successiveOnes == 5) {
+                    currentByte <<= 1;
+                    nBits++;
+                    successiveOnes = 0;
+                    if (nBits == 8) {
+                        bytes.add((byte) currentByte);
+                        nBits = currentByte = 0;
+                    }
+                }
+            }
+        }
+
+        byte[] res = new byte[bytes.size()];
+        for (int i = 0; i < bytes.size(); i++)
+            res[i] = bytes.get(i);
+        return res;
     }
 
-    private byte[] bitStuff (byte[] data) {
-	StringBuilder s = new StringBuilder();
-	int successiveOnes = 0;
-	for (int i = 0; i < data.length; i++) {
-	    String cur = Utils.leftPad(Integer.toBinaryString(data[i]), 8);
-	    for (char c : cur.toCharArray()) {
-		if (successiveOnes == 5) {
-		    s.append('0');
-		    successiveOnes = 0;
-		}
-		
-		if (c == '0')
-		    successiveOnes = 0;
-		else
-		    successiveOnes++;
-
-		s.append(c);
-	    }
-	}
-	// XXX : could be better
-	ByteBuffer r = ByteBuffer.allocate(2 + (int) Math.ceil((float)s.length() / 8.f));
-	r.put(FLAG);
-	try {
-	    for (int i = 0; i < s.length(); i += 8) {
-		r.put(Byte.parseByte(s.substring(i, i + 8)));
-	    }
-	} catch (Exception e) { }
-	r.put(FLAG);
-
-	return r.array();
+    public byte[] getData () {
+        return data;
     }
 }

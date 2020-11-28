@@ -13,7 +13,7 @@ public class ByteReader {
     private byte read () throws Exception {
 	int val = in.read();
 	if (val < 0 && val > 255)
-	    throw new Exception();
+	    throw new Exception("byte value out of bound");
 
 	String cur = Utils.leftPad(Integer.toBinaryString(val), 8);
 	byte res = 0;
@@ -24,8 +24,7 @@ public class ByteReader {
 		    j++;
 		    continue;
 		} else if (cur.charAt(j+2) == '1') {
-		    System.err.println("Abort Condition...");
-		    throw new Exception();
+		    throw new Exception("Abort Condition...");
 		} else {
 		    return Frame.FLAG;
 		}
