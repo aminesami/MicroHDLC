@@ -1,4 +1,4 @@
-package common;
+package client;
 import java.util.*;
 import java.nio.*;
 
@@ -12,14 +12,15 @@ public class Frame {
     private byte[] data;
 
     public Frame (Type type, char num, byte[] data) {
-	byte[] rawData = new byte[META_DATA_SIZE + data.length - 2]; // without flags
+	byte[] rawData = new byte[META_DATA_SIZE + (data == null ? 0 : data.length) - 2]; // without flags
 
 	rawData[0] = (byte) type.ordinal();
 	rawData[1] = (byte) num;
-	for (int i = 0; i < data.length; i++) {
-	    rawData[i + 2] = data[i];
-	}
-        
+        if (data != null) {
+            for (int i = 0; i < data.length; i++) {
+                rawData[i + 2] = data[i];
+            }
+        }
 	rawData[rawData.length - 2] = 0;
 	rawData[rawData.length - 1] = 0;
         

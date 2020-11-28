@@ -1,10 +1,9 @@
 package client;
 
+import java.io.*;
 import java.net.*;
 import java.nio.file.*;
 import static java.nio.file.Files.readAllBytes;
-
-import common.*;
 
 public class Sender {
     private Socket socket;
@@ -13,9 +12,19 @@ public class Sender {
 	try {
 	    socket = new Socket(hostname, port);
 
+            // should not close the streams
+            InputStream in = socket.getInputStream();
+            OutputStream out = socket.getOutputStream();
+            
 	    Frame[] frames = FrameBuilder.splitFrames(data);
-	    
-	    System.out.writeBytes(data);
+
+            int i = 0;
+            while (i < frames.length) {
+                for (int j = 0; j < FrameBuilder.MAX_NUM_FRAMES && i + j < frames.length; j++) {
+                    out.write(frames[i + j].getData());
+                }
+                // wait for RR or REJ
+            }
 	    
 	    socket.close();
 	} catch (Exception  e) {

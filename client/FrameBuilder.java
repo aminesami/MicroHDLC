@@ -1,12 +1,12 @@
-package common;
+package client;
 
 import java.util.*;
-import static common.Frame.META_DATA_SIZE;
+import static client.Frame.META_DATA_SIZE;
 
 public class FrameBuilder {
     private static final int MAX_FRAME_SIZE = 128 * 1024; // 128 kB
     private static final int EFFECTIVE_MAX_DATA_SIZE = MAX_FRAME_SIZE - META_DATA_SIZE;
-    private static final int MAX_NUM_FRAMES = 8; // 3 bits
+    public static final int MAX_NUM_FRAMES = 8; // 3 bits
     
     public static Frame[] splitFrames (byte[] data) {
 	int frameNum = 0;
