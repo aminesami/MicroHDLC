@@ -5,7 +5,7 @@ import java.util.*;
 import java.nio.*;
 
 public class Frame {
-    public static final int META_DATA_SIZE = 6;
+    public static final int META_DATA_SIZE = 4;
     private static final int CHECKSUM_WIDTH = 2;
     private static final int CRC_CCITT = (1 << 16) | (1 << 12) | (1 << 5) | 1;
     public static final byte FLAG = 0b01111110;
@@ -32,8 +32,10 @@ public class Frame {
         default: throw new Exception("invalid frame type");
         }
         num = (char) data[1];
-        // TODO : use checknum calculation to verify data integrity
-        this.data = new byte[data.length - META_DATA_SIZE - 2]; // wihtout flags;
+        if (calculateChecksum(data) != 0)
+            throw new Exception("corrupted data: invalid checksum");
+        
+        this.data = new byte[data.length - META_DATA_SIZE - CHECKSUM_WIDTH];
         for (int i = 0; i < this.data.length; i++)
             this.data[i] = data[i+2];
     }
@@ -51,7 +53,7 @@ public class Frame {
     }
 
     public void send (OutputStream out) throws IOException {
-	byte[] rawData = new byte[META_DATA_SIZE + (data == null ? 0 : data.length) - 2]; // without flags
+	byte[] rawData = new byte[META_DATA_SIZE + (data == null ? 0 : data.length)];
 
         switch (type) {
         case I: rawData[0] = 0; break;
@@ -60,7 +62,7 @@ public class Frame {
         case R: rawData[0] = 3; break;
         case F: rawData[0] = 4; break;
         case P: rawData[0] = 5; break;
-        default: rawData[0] = -1; break;
+        default: rawData[0] = -1; break; // impossible case
         }
 	rawData[1] = (byte) num;
         if (data != null) {
@@ -71,11 +73,14 @@ public class Frame {
 	rawData[rawData.length - 2] = 0;
 	rawData[rawData.length - 1] = 0;
         
-	calculateChecksum(rawData);
+	int crc = calculateChecksum(rawData);
+        data[data.length - 2] = (byte) ((crc & 0xff00) >> 8);
+        data[data.length - 1] = (byte) (crc & 0xff);
+
         out.write(bitStuff(rawData));
     }
 
-    private void calculateChecksum (byte[] data) {
+    private int calculateChecksum (byte[] data) {
         int[] bytes = new int[data.length];
         for (int i = 0; i < data.length; i++)
             bytes[i] = data[i];
@@ -91,8 +96,7 @@ public class Frame {
             }
         }
 
-        data[data.length - 2] = (byte) ((crc & 0xff00) >> 8);
-        data[data.length - 1] = (byte) (crc & 0xff);
+        return crc & 0xffff;
     }
     
     private byte[] bitStuff (byte[] data) {
