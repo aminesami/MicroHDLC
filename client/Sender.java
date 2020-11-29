@@ -21,7 +21,7 @@ public class Sender {
             int i = 0;
             while (i < frames.length) {
                 for (int j = 0; j < FrameBuilder.MAX_NUM_FRAMES && i + j < frames.length; j++) {
-                    out.write(frames[i + j].getData());
+                    frames[i + j].send(out);
                 }
                 // wait for RR or REJ
             }

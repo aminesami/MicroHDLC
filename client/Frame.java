@@ -1,4 +1,6 @@
 package client;
+
+import java.io.*;
 import java.util.*;
 import java.nio.*;
 
@@ -9,12 +11,57 @@ public class Frame {
     public static final byte FLAG = 0b01111110;
     public static enum Type { I, C, A, R, F, P };
 
+    private Type type;
+    private char num;
     private byte[] data;
 
     public Frame (Type type, char num, byte[] data) {
+        this.type = type;
+        this.num = num;
+	this.data = data;
+    }
+
+    public Frame (byte[] data) throws Exception {
+        switch (data[0]) {
+        case 0: type = Type.I; break;
+        case 1: type = Type.C; break;
+        case 2: type = Type.A; break;
+        case 3: type = Type.R; break;
+        case 4: type = Type.F; break;
+        case 5: type = Type.P; break;
+        default: throw new Exception("invalid frame type");
+        }
+        num = (char) data[1];
+        // TODO : use checknum calculation to verify data integrity
+        this.data = new byte[data.length - META_DATA_SIZE - 2]; // wihtout flags;
+        for (int i = 0; i < this.data.length; i++)
+            this.data[i] = data[i+2];
+    }
+
+    public Type getType () {
+        return type;
+    }
+
+    public char getNum () {
+        return num;
+    }
+    
+    public byte[] getData () {
+        return data;
+    }
+
+    public void send (OutputStream out) throws IOException {
 	byte[] rawData = new byte[META_DATA_SIZE + (data == null ? 0 : data.length) - 2]; // without flags
 
-	rawData[0] = (byte) type.ordinal();
+        switch (type) {
+        case I: rawData[0] = 0; break;
+        case C: rawData[0] = 1; break;
+        case A: rawData[0] = 2; break;
+        case R: rawData[0] = 3; break;
+        case F: rawData[0] = 4; break;
+        case P: rawData[0] = 5; break;
+        default: rawData[0] = -1; break;
+        }
 	rawData[1] = (byte) num;
         if (data != null) {
             for (int i = 0; i < data.length; i++) {
@@ -25,7 +72,7 @@ public class Frame {
 	rawData[rawData.length - 1] = 0;
         
 	calculateChecksum(rawData);
-	this.data = bitStuff(rawData);
+        out.write(bitStuff(rawData));
     }
 
     private void calculateChecksum (byte[] data) {
@@ -85,9 +132,5 @@ public class Frame {
         for (int i = 0; i < bytes.size(); i++)
             res[i] = bytes.get(i);
         return res;
-    }
-
-    public byte[] getData () {
-        return data;
     }
 }
