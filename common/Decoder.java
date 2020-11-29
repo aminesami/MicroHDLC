@@ -66,4 +66,9 @@ public class Decoder {
 
         return res;
     }
+
+    public static Frame getFrame (InputStream in) throws Exception {
+        byte[] stuffedData = getBitStuffedFrame(in);
+        return new Frame(bitUnstuff(stuffedData));
+    }
 }

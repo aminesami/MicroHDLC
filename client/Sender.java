@@ -5,6 +5,8 @@ import java.net.*;
 import java.nio.file.*;
 import static java.nio.file.Files.readAllBytes;
 
+import common.*;
+
 public class Sender {
     private Socket socket;
     
@@ -19,11 +21,19 @@ public class Sender {
 	    Frame[] frames = FrameBuilder.splitFrames(data);
 
             int i = 0;
+            int expectedNum = 2;
+            go_back:
             while (i < frames.length) {
                 for (int j = 0; j < FrameBuilder.MAX_NUM_FRAMES && i + j < frames.length; j++) {
                     frames[i + j].send(out);
                 }
-                // wait for RR or REJ
+                for (int j = 0; j < FrameBuilder.MAX_NUM_FRAMES/2; j++) {
+                    Frame response = Decoder.getFrame(in);
+                    if (response.getType() != Frame.Type.A)
+                        continue go_back;
+                    expectedNum = expectedNum + 2 % (FrameBuilder.MAX_NUM_FRAMES + 1);
+                    i += 2;
+                }
             }
 	    
 	    socket.close();

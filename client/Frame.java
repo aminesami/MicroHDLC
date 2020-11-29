@@ -7,15 +7,17 @@ import java.nio.*;
 public class Frame {
     public static final int META_DATA_SIZE = 4;
     private static final int CHECKSUM_WIDTH = 2;
-    private static final int CRC_CCITT = (1 << 16) | (1 << 12) | (1 << 5) | 1;
+    private static final int CRC_CCITT = /*(1 << 16) | */(1 << 12) | (1 << 5) | 1;
     public static final byte FLAG = 0b01111110;
     public static enum Type { I, C, A, R, F, P };
 
+    private static byte[] dummyData = { 0 };
+    
     private Type type;
-    private char num;
+    private int num;
     private byte[] data;
 
-    public Frame (Type type, char num, byte[] data) {
+    public Frame (Type type, int num, byte[] data) {
         this.type = type;
         this.num = num;
 	this.data = data;
@@ -31,9 +33,10 @@ public class Frame {
         case 5: type = Type.P; break;
         default: throw new Exception("invalid frame type");
         }
-        num = (char) data[1];
-        if (calculateChecksum(data) != 0)
-            throw new Exception("corrupted data: invalid checksum");
+        num = type == Type.I ? data[1] - '0' : data[1];
+        int crc;
+        if ((crc = calculateChecksum(data)) != 0)
+            throw new Exception("corrupted data: invalid checksum (" + Integer.toBinaryString(crc) + ")");
         
         this.data = new byte[data.length - META_DATA_SIZE - CHECKSUM_WIDTH];
         for (int i = 0; i < this.data.length; i++)
@@ -44,7 +47,7 @@ public class Frame {
         return type;
     }
 
-    public char getNum () {
+    public int getNum () {
         return num;
     }
     
@@ -64,7 +67,7 @@ public class Frame {
         case P: rawData[0] = 5; break;
         default: rawData[0] = -1; break; // impossible case
         }
-	rawData[1] = (byte) num;
+	rawData[1] = (byte) (type == Type.I ? num + '0' : num);
         if (data != null) {
             for (int i = 0; i < data.length; i++) {
                 rawData[i + 2] = data[i];
@@ -74,17 +77,17 @@ public class Frame {
 	rawData[rawData.length - 1] = 0;
         
 	int crc = calculateChecksum(rawData);
-        data[data.length - 2] = (byte) ((crc & 0xff00) >> 8);
-        data[data.length - 1] = (byte) (crc & 0xff);
+        rawData[rawData.length - 2] = (byte) ((crc & 0xff00) >> 8);
+        rawData[rawData.length - 1] = (byte) (crc & 0xff);
 
         out.write(bitStuff(rawData));
     }
 
-    private int calculateChecksum (byte[] data) {
+    public static int calculateChecksum (byte[] data) {
         int[] bytes = new int[data.length];
         for (int i = 0; i < data.length; i++)
             bytes[i] = data[i];
-        int crc = 0;
+        int crc = 0xffff;
 
         for (int b : bytes) {
             for (int i = 0; i < 8; i++) {
@@ -99,7 +102,7 @@ public class Frame {
         return crc & 0xffff;
     }
     
-    private byte[] bitStuff (byte[] data) {
+    public static byte[] bitStuff (byte[] data) {
         int successiveOnes = 0;
         int nBits = 0;
         int currentByte = 0;
@@ -132,9 +135,11 @@ public class Frame {
             }
         }
 
-        byte[] res = new byte[bytes.size()];
+        byte[] res = new byte[bytes.size() + 2];
+        res[0] = FLAG;
         for (int i = 0; i < bytes.size(); i++)
-            res[i] = bytes.get(i);
+            res[i + 1] = bytes.get(i);
+        res[res.length - 1] = FLAG;
         return res;
     }
 }
