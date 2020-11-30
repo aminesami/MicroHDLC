@@ -134,6 +134,9 @@ public class Frame {
                 }
             }
         }
+        if (nBits != 0) {
+            bytes.add((byte) (currentByte << (8 - nBits)));
+        }
 
         byte[] res = new byte[bytes.size() + 2];
         res[0] = FLAG;
