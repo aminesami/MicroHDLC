@@ -34,13 +34,15 @@ public class Frame {
         default: throw new Exception("invalid frame type");
         }
         num = type == Type.I ? data[1] - '0' : data[1];
-        int crc;
-        if ((crc = calculateChecksum(data)) != 0)
-            throw new Exception("corrupted data: invalid checksum (" + Integer.toBinaryString(crc) + ")");
-        
-        this.data = new byte[data.length - META_DATA_SIZE - CHECKSUM_WIDTH];
-        for (int i = 0; i < this.data.length; i++)
-            this.data[i] = data[i+2];
+        if (type == Type.I) {
+            int crc;
+            if ((crc = calculateChecksum(data)) != 0)
+                throw new Exception("corrupted data: invalid checksum (" + Integer.toBinaryString(crc) + ")");
+            
+            this.data = new byte[data.length - META_DATA_SIZE - CHECKSUM_WIDTH];
+            for (int i = 0; i < this.data.length; i++)
+                this.data[i] = data[i+2];
+        }
     }
 
     public Type getType () {
@@ -134,9 +136,8 @@ public class Frame {
                 }
             }
         }
-        if (nBits != 0) {
+        if (nBits != 0)
             bytes.add((byte) (currentByte << (8 - nBits)));
-        }
 
         byte[] res = new byte[bytes.size() + 2];
         res[0] = FLAG;

@@ -37,6 +37,7 @@ public class Decoder {
                     successiveOnes++;
                 else
                     successiveOnes = 0;
+                
                 if (successiveOnes == 5) {
                     if (i == 7) { // end of byte special case
                         if (j + 1 == data.length)
@@ -51,6 +52,7 @@ public class Decoder {
                     // reaching here means we skipped a zero following five 1's
                     successiveOnes = 0;
                 }
+                
                 currentByte = (currentByte << 1) | bit;
                 nBits++;
                 if (nBits == 8) {
