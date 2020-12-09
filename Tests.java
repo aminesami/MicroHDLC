@@ -7,17 +7,17 @@ import common.*;
 
 public class Tests {
     public static void main (String[] args) {
-        System.out.println(testResult(1, bitStuffTest()));
-        System.out.println(testResult(2, checksumTest()));
-        System.out.println(testResult(3, bitUnstuffTest()));
-        System.out.println(testResult(4, frameSplitTest()));
-        System.out.println(testResult(5, doubleChecksumTest()));
-        System.out.println(testResult(6, gulliverFrameSplitTest()));
-        System.out.println(testResult(7, gulliverStuffingTest()));
+        System.out.println(testResult("bit stuff", bitStuffTest()));
+        System.out.println(testResult("checksum", checksumTest()));
+        System.out.println(testResult("bit unstuff", bitUnstuffTest()));
+        System.out.println(testResult("frame split", frameSplitTest()));
+        System.out.println(testResult("double checksum", doubleChecksumTest()));
+        System.out.println(testResult("gulliver frame split", gulliverFrameSplitTest()));
+        System.out.println(testResult("gulliver stuffing", gulliverStuffingTest()));
     }
 
-    public static String testResult (int n, boolean result) {
-        return "test #" + n + " " + (result ? "succeeded" : "failed");
+    public static String testResult (String name, boolean result) {
+        return "test " + (result ? "succeeded" : "failed   ") + " (" + name + ")";
     }
             
     public static boolean bitStuffTest () {
@@ -46,7 +46,9 @@ public class Tests {
 
     public static boolean checksumTest () {
         byte[] data = "123456789".getBytes();
-        return Frame.calculateChecksum(data) == 0x29b1;
+        int v = Frame.calculateChecksum(data);
+        // System.out.println(Integer.toHexString(v));
+        return v == 0x29b1;
     }
 
     public static boolean doubleChecksumTest () {
@@ -96,20 +98,24 @@ public class Tests {
             do {
                 output = Decoder.bitUnstuff(Decoder.getBitStuffedFrame(in));
                 f = new Frame(output);
+
                 if (f.getType() == Frame.Type.I) {
                     fs.add(f);
                     n += f.getData().length;
                 }
             } while (f.getType() != Frame.Type.F);
 
-            output = new byte[n];
+            output = new byte[n];                    
+
+            n = 0;
             for (Frame frm : fs) {
                 byte[] bs = frm.getData();
                 for (int i = 0; i < bs.length; i++) {
                     output[n++] = bs[i];
                 }
             }
-            
+            // System.out.write(output, 0, 530);
+            // System.out.println(data.length + " / " + output.length);
             return Arrays.equals(data, output);
         } catch (Exception e) {
             e.printStackTrace();

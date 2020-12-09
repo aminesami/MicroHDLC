@@ -1,7 +1,11 @@
 package server;
 
+import java.io.*;
 import java.net.*;
 import java.util.*;
+
+import client.*;
+import common.*;
 
 public class Receiver {
     private ServerSocket serverSocket;
@@ -21,10 +25,11 @@ public class Receiver {
             // wait for connection request frame
             while ((frame = Decoder.getFrame(in)).getType() != Frame.Type.C)
                 ;
-
+            
             boolean shouldAnswer = false;
             int frameCount = 0;
             while ((frame = Decoder.getFrame(in)).getType() != Frame.Type.F) {
+                System.out.println(frame.getType() + " " + frame.getNum());
                 if (frame.getType() == Frame.Type.I) {
                     if (frame.getNum() == (frameCount + 1) % (FrameBuilder.MAX_NUM_FRAMES + 1)) {
                         frames.add(frame);
@@ -36,14 +41,14 @@ public class Receiver {
                         frameCount = (frameCount + 1) % (FrameBuilder.MAX_NUM_FRAMES + 1);
                     } else {
                         Frame response = new Frame(Frame.Type.R, frameCount, null);
-                        repsonse.send(out);
+                        response.send(out);
                     }
                 }
             }
             
-	    serverSocket.close();
+            serverSocket.close();
 	} catch (Exception e) {
-	    
+            e.printStackTrace();
 	}
     }
 

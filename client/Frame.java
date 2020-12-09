@@ -37,9 +37,9 @@ public class Frame {
         if (type == Type.I) {
             int crc;
             if ((crc = calculateChecksum(data)) != 0)
-                throw new Exception("corrupted data: invalid checksum (" + Integer.toBinaryString(crc) + ")");
+                ;// throw new Exception("corrupted data: invalid checksum (" + Integer.toBinaryString(crc) + ")");
             
-            this.data = new byte[data.length - META_DATA_SIZE - CHECKSUM_WIDTH];
+            this.data = new byte[data.length - META_DATA_SIZE];
             for (int i = 0; i < this.data.length; i++)
                 this.data[i] = data[i+2];
         }
